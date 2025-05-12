@@ -17,8 +17,11 @@ export class CreateUserDto {
     required: false,
   })
   @IsOptional()
-  @Matches(/^[0-9]{10}$/, { message: 'Số điện thoại phải có đúng 10 số' })
-  @ValidateIf((o) => !o.email || o.phoneNumber)
+  @ValidateIf((o) => o.authProvider !== AuthProvider.GOOGLE)
+  @Matches(/^[0-9]{10}$/, { 
+    message: 'Số điện thoại phải có đúng 10 số',
+    each: false 
+  })
   phoneNumber?: string;
 
   @ApiProperty({
@@ -27,8 +30,10 @@ export class CreateUserDto {
     required: false,
   })
   @IsOptional()
-  @IsEmail({}, { message: 'Email không hợp lệ' })
-  @ValidateIf((o) => !o.phoneNumber || o.email)
+  @IsEmail({}, { 
+    message: 'Email không hợp lệ',
+    each: false 
+  })
   email?: string;
 
   @ApiProperty({
@@ -71,4 +76,13 @@ export class CreateUserDto {
   @IsOptional()
   @IsEnum(AuthProvider)
   authProvider?: AuthProvider = AuthProvider.LOCAL;
+  
+  @ApiProperty({
+    description: 'The avatar URL',
+    example: 'https://example.com/avatar.jpg',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  avatar?: string;
 }

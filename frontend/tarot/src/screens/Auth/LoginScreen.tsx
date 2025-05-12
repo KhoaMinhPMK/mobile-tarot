@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
@@ -15,10 +16,15 @@ import Input from '../../components/Input';
 import Button from '../../components/Button';
 import SocialButton from '../../components/SocialButton';
 import GoogleIcon from '../../components/GoogleIcon';
+import apiService from '../../utils/apiService';
+import { saveAccessToken, saveRefreshToken, saveUserInfo } from '../../utils/authStorage';
+import { 
+  GoogleSignin, 
+  statusCodes 
+} from '@react-native-google-signin/google-signin';
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  'Login'
+  RootStackParamList
 >;
 
 /**
@@ -33,6 +39,29 @@ const LoginScreen = () => {
     password: '',
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  // Khởi tạo Google Sign In khi component mount
+  useEffect(() => {
+    configureGoogleSignIn();
+  }, []);
+
+  // Cấu hình Google Sign In
+  const configureGoogleSignIn = () => {
+    try {
+      // Cấu hình Google Sign In với Web Client ID từ google-services.json
+      GoogleSignin.configure({
+        // Web Client ID từ google-services.json
+        webClientId: '201499845393-goer2of7nnb561ccbqmi2r9q1ne9r5ov.apps.googleusercontent.com',
+        offlineAccess: true,
+        forceCodeForRefreshToken: true,
+      });
+      
+      console.log('[Google] Đã cấu hình Google Sign In');
+    } catch (error) {
+      console.error('[Google] Lỗi khi cấu hình Google Sign In:', error);
+    }
+  };
 
   // Hàm kiểm tra dữ liệu nhập vào
   const validateInputs = () => {
@@ -62,29 +91,181 @@ const LoginScreen = () => {
   };
 
   // Hàm xử lý đăng nhập
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (validateInputs()) {
       setIsLoading(true);
       
-      // Giả lập xử lý đăng nhập
-      setTimeout(() => {
-        console.log('Thông tin đăng nhập:');
-        console.log('- Số điện thoại:', phoneNumber);
-        console.log('- Mật khẩu:', password);
-        console.log('- Tên:', ''); // Tên để trống theo yêu cầu
-
-        setIsLoading(false);
+      try {
+        console.log('Đang đăng nhập với số điện thoại:', phoneNumber);
+        
+        // Gọi API đăng nhập
+        const response = await apiService.login(phoneNumber, undefined, password);
+        
+        // Lưu thông tin đăng nhập vào bộ nhớ
+        await saveAccessToken(response.accessToken);
+        await saveRefreshToken(response.refreshToken);
+        await saveUserInfo(response.user);
+        
+        console.log('Đăng nhập thành công:', response.user);
         
         // Chuyển đến màn hình Home
-        navigation.navigate('Home', { name: '' });
-      }, 1500);
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Home' }],
+        });
+      } catch (error: any) {
+        console.error('Lỗi khi đăng nhập:', error);
+        
+        // Hiển thị thông báo lỗi
+        Alert.alert(
+          'Đăng nhập thất bại',
+          error.message || 'Số điện thoại hoặc mật khẩu không chính xác',
+          [{ text: 'OK' }]
+        );
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
   // Xử lý đăng nhập bằng Google
-  const handleGoogleSignIn = () => {
-    console.log('Đăng nhập bằng Google');
-    // Xử lý đăng nhập Google sẽ được thêm sau
+  const handleGoogleSignIn = async () => {
+    try {
+      setIsGoogleLoading(true);
+      console.log('[Google] Bắt đầu quá trình đăng nhập với Google');
+      
+      // Kiểm tra Play Services
+      await GoogleSignin.hasPlayServices();
+      
+      // Đăng xuất trước để đảm bảo người dùng chọn tài khoản mới
+      try {
+        await GoogleSignin.signOut();
+        console.log('[Google] Đã đăng xuất khỏi phiên đăng nhập Google trước đó');
+      } catch (signOutError) {
+        // Bỏ qua lỗi đăng xuất
+        console.log('[Google] Không có phiên đăng nhập trước đó');
+      }
+      
+      // Bắt đầu quy trình đăng nhập
+      const userInfo: any = await GoogleSignin.signIn();
+      
+      // In thông tin người dùng ra log
+      console.log('[Google] Đăng nhập thành công, thông tin người dùng:');
+      console.log('[Google] Thông tin đầy đủ:', JSON.stringify(userInfo, null, 2));
+      
+      // Kiểm tra chi tiết cấu trúc dữ liệu trả về
+      console.log('[Google] Kiểm tra cấu trúc dữ liệu:', {
+        hasData: !!userInfo?.data,
+        hasUser: !!userInfo?.user,
+        hasUserData: !!userInfo?.data?.user,
+        email: userInfo?.user?.email || userInfo?.data?.user?.email || null
+      });
+      
+      // Trích xuất email từ thông tin người dùng Google - kiểm tra nhiều vị trí có thể
+      let email = null;
+      let googleUser = null;
+      
+      // Kiểm tra email trong cấu trúc cũ
+      if (userInfo?.user?.email) {
+        email = userInfo.user.email;
+        googleUser = userInfo.user;
+      } 
+      // Kiểm tra email trong cấu trúc mới (data.user)
+      else if (userInfo?.data?.user?.email) {
+        email = userInfo.data.user.email;
+        googleUser = userInfo.data.user;
+      }
+      
+      if (email && googleUser) {
+        const defaultPassword = '12345678'; // Mật khẩu mặc định cho đăng nhập Google
+        
+        console.log('[Google] Đăng nhập với email:', email);
+        console.log('[Google] Sử dụng mật khẩu mặc định');
+        
+        try {
+          // Gọi API đăng nhập với email và mật khẩu mặc định
+          const response = await apiService.login(undefined, email, defaultPassword);
+          
+          // Lưu thông tin đăng nhập vào bộ nhớ
+          await saveAccessToken(response.accessToken);
+          await saveRefreshToken(response.refreshToken);
+          await saveUserInfo(response.user);
+          
+          console.log('[Google] Đăng nhập thành công với email:', email);
+          
+          // Chuyển đến màn hình Home
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Home' }],
+          });
+        } catch (loginError: any) {
+          // Không hiển thị lỗi đăng nhập, chỉ ghi log
+          console.log('[Google] Tài khoản chưa tồn tại, tiến hành đăng ký tự động');
+          
+          try {
+            // Chuẩn bị dữ liệu đăng ký
+            const registerData = {
+              fullName: googleUser.name || `${googleUser.givenName || ''} ${googleUser.familyName || ''}`.trim(),
+              email: email,
+              password: defaultPassword,
+              authProvider: 'google',
+              avatar: googleUser.photo || undefined
+            };
+            
+            console.log('[Google] Dữ liệu đăng ký tự động:', JSON.stringify(registerData, null, 2));
+            console.log('[Google] Avatar URL từ Google:', googleUser.photo);
+            
+            // Gọi API đăng ký
+            const registerResponse = await apiService.register(registerData);
+            
+            // Lưu thông tin đăng nhập vào bộ nhớ
+            await saveAccessToken(registerResponse.accessToken);
+            await saveRefreshToken(registerResponse.refreshToken);
+            await saveUserInfo(registerResponse.user);
+            
+            console.log('[Google] Đăng ký tự động thành công');
+            
+            // Chuyển đến màn hình Home mà không hiển thị thông báo
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Home' }],
+            });
+          } catch (registerError: any) {
+            console.error('[Google] Lỗi khi đăng ký tự động:', registerError);
+            
+            Alert.alert(
+              'Không thể đăng ký tự động',
+              registerError.message || 'Có lỗi xảy ra khi đăng ký tài khoản. Vui lòng thử lại sau.',
+              [{ text: 'OK' }]
+            );
+          }
+        }
+      } else {
+        throw new Error('Không thể lấy email từ tài khoản Google');
+      }
+    } catch (error: any) {
+      console.error('[Google] Lỗi khi đăng nhập với Google:', error);
+      
+      // Xử lý các loại lỗi
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        console.log('[Google] Người dùng đã hủy đăng nhập');
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+        console.log('[Google] Đăng nhập đang trong tiến trình');
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        console.log('[Google] Play Services không khả dụng');
+        Alert.alert(
+          'Lỗi',
+          'Google Play Services không khả dụng trên thiết bị này'
+        );
+      } else {
+        Alert.alert(
+          'Lỗi đăng nhập',
+          error.message || 'Có lỗi xảy ra khi đăng nhập với Google'
+        );
+      }
+    } finally {
+      setIsGoogleLoading(false);
+    }
   };
 
   return (
@@ -138,7 +319,7 @@ const LoginScreen = () => {
           </View>
 
           <SocialButton
-            title="Tiếp tục với Google"
+            title={isGoogleLoading ? "Đang xử lý..." : "Tiếp tục với Google"}
             onPress={handleGoogleSignIn}
             icon={<GoogleIcon size={24} />}
           />
@@ -146,7 +327,7 @@ const LoginScreen = () => {
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>Chưa có tài khoản? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+          <TouchableOpacity onPress={() => (navigation as any).navigate('Register')}>
             <Text style={styles.footerLink}>Đăng ký ngay</Text>
           </TouchableOpacity>
         </View>

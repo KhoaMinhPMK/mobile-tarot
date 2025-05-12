@@ -13,7 +13,16 @@ import ChatRoomScreen from '../screens/Chat/ChatRoomScreen';
 export type RootStackParamList = {
   Splash: undefined;
   Login: undefined;
-  Register: undefined;
+  Register: {
+    googleUser?: {
+      id?: string;
+      name?: string;
+      email?: string;
+      photo?: string;
+      givenName?: string;
+      familyName?: string;
+    };
+  };
   Home: { name?: string };
   Settings: undefined;
   ExpertsList: undefined;

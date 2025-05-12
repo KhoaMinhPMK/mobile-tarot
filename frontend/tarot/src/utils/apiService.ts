@@ -49,6 +49,12 @@ class ApiService {
         console.log('[API] URL chứa localhost, cần thay thế bằng IP server');
         return false;
       }
+
+      // Kiểm tra URL từ Google (googleusercontent.com)
+      if (url.includes('googleusercontent.com')) {
+        console.log('[API] Phát hiện URL từ Google, chấp nhận là URL hợp lệ');
+        return true;
+      }
       
       // Kiểm tra xem chuỗi có phải URL hợp lệ và có protocol http/https không
       const urlObj = new URL(url);
@@ -475,6 +481,164 @@ class ApiService {
       });
     } catch (error) {
       console.error('[API] Lỗi khi cập nhật thông tin người dùng (đơn giản):', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Đăng nhập bằng số điện thoại/email và mật khẩu
+   * @param phoneNumber Số điện thoại người dùng
+   * @param email Email người dùng
+   * @param password Mật khẩu người dùng
+   * @returns Thông tin đăng nhập bao gồm token và thông tin người dùng
+   */
+  async login(phoneNumber?: string, email?: string, password: string) {
+    try {
+      console.log('[API] Đang thực hiện đăng nhập');
+      
+      // Chuẩn bị dữ liệu đăng nhập
+      const loginData: any = { password };
+      
+      // Thêm số điện thoại hoặc email vào dữ liệu đăng nhập
+      if (phoneNumber) {
+        loginData.phoneNumber = phoneNumber;
+        console.log('[API] Đăng nhập với số điện thoại:', phoneNumber);
+      } else if (email) {
+        loginData.email = email;
+        console.log('[API] Đăng nhập với email:', email);
+      } else {
+        throw new Error('Vui lòng cung cấp số điện thoại hoặc email');
+      }
+      
+      // Gọi API đăng nhập
+      const url = `${API_BASE_URL}/auth/login`;
+      console.log(`[API] Gọi API đăng nhập: ${url}`);
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(loginData),
+      });
+      
+      // Xử lý response
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error(`[API] Lỗi khi đăng nhập (${response.status}):`, errorData);
+        throw new Error(errorData.message || 'Đăng nhập thất bại');
+      }
+      
+      const data = await response.json();
+      console.log('[API] Đăng nhập thành công:', data);
+      
+      return data;
+    } catch (error) {
+      console.error('[API] Lỗi khi đăng nhập:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Đăng ký tài khoản mới
+   * @param userData Thông tin đăng ký người dùng
+   * @returns Thông tin đăng ký bao gồm token và thông tin người dùng
+   */
+  async register(userData: {
+    fullName: string,
+    password: string,
+    authProvider?: string,
+    email?: string,
+    phoneNumber?: string,
+    avatar?: string
+  }) {
+    try {
+      console.log('[API] Đang thực hiện đăng ký tài khoản');
+      
+      // Clone dữ liệu để không ảnh hưởng đến đối tượng ban đầu
+      const registerData = { ...userData };
+      
+      // Xử lý avatar URL với localhost nếu có
+      if (registerData.avatar && typeof registerData.avatar === 'string') {
+        // Kiểm tra xem avatar có phải là URL hợp lệ không
+        if (this.isValidUrl(registerData.avatar)) {
+          console.log('[API] Avatar là URL hợp lệ:', registerData.avatar);
+          registerData.avatar = this.convertLocalhostUrl(registerData.avatar);
+        } else {
+          console.log('[API] Avatar không phải URL hợp lệ, có thể cần upload:', registerData.avatar);
+          // Nếu không phải URL hợp lệ, có thể là đường dẫn local, sẽ xử lý sau
+          // Giữ nguyên giá trị để xử lý ở backend
+        }
+      }
+      
+      // Loại bỏ các trường rỗng để tránh lỗi validation
+      Object.keys(registerData).forEach(key => {
+        if (registerData[key] === '' || registerData[key] === undefined) {
+          delete registerData[key];
+        }
+      });
+      
+      console.log('[API] Dữ liệu đăng ký (đã làm sạch):', JSON.stringify(registerData, null, 2));
+      
+      // Gọi API đăng ký
+      const url = `${API_BASE_URL}/auth/signup`;
+      console.log(`[API] Gọi API đăng ký: ${url}`);
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(registerData),
+      });
+      
+      // Xử lý response
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error(`[API] Lỗi khi đăng ký (${response.status}):`, errorData);
+        throw new Error(errorData.message || 'Đăng ký thất bại');
+      }
+      
+      const data = await response.json();
+      console.log('[API] Đăng ký thành công:', data);
+      
+      return data;
+    } catch (error) {
+      console.error('[API] Lỗi khi đăng ký:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Đăng ký tự động với thông tin từ Google
+   * @param googleData Thông tin từ Google
+   * @returns Thông tin đăng ký bao gồm token và thông tin người dùng
+   */
+  async registerWithGoogle(googleData: any) {
+    try {
+      console.log('[API] Đang thực hiện đăng ký tự động với Google');
+      
+      // Kiểm tra dữ liệu đầu vào
+      if (!googleData || !googleData.email) {
+        throw new Error('Thiếu thông tin email từ Google');
+      }
+      
+      // Chuẩn bị dữ liệu đăng ký
+      const registerData = {
+        fullName: googleData.name || `${googleData.givenName || ''} ${googleData.familyName || ''}`.trim(),
+        email: googleData.email,
+        password: '12345678', // Mật khẩu mặc định cho đăng ký Google
+        authProvider: 'google',
+        avatar: googleData.photo || undefined
+        // Không gửi phoneNumber khi đăng ký với Google
+      };
+      
+      console.log('[API] Dữ liệu đăng ký Google:', JSON.stringify(registerData, null, 2));
+      
+      // Gọi API đăng ký
+      return await this.register(registerData);
+    } catch (error) {
+      console.error('[API] Lỗi khi đăng ký với Google:', error);
       throw error;
     }
   }

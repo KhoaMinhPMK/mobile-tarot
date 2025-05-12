@@ -47,6 +47,7 @@ export class AuthService {
         phoneNumber: user.phoneNumber,
         fullName: user.fullName,
         role: user.role, // Thêm role vào dữ liệu trả về
+        avatar: user.avatar, // Thêm avatar vào dữ liệu trả về
       },
     };
   }
@@ -109,6 +110,7 @@ export class AuthService {
         phoneNumber: user.phoneNumber,
         fullName: user.fullName,
         role: user.role, // Thêm role vào dữ liệu trả về
+        avatar: user.avatar, // Thêm avatar vào dữ liệu trả về
       },
     };
   }

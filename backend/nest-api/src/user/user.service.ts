@@ -68,6 +68,7 @@ export class UserService {
         email: createUserDto.email,
         phoneNumber: createUserDto.phoneNumber,
         gender: createUserDto.gender,
+        avatar: createUserDto.avatar,
       };
       
       // Hash mật khẩu nếu được cung cấp và không phải đăng ký với Google
