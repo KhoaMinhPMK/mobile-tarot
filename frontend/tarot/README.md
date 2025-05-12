@@ -1,97 +1,159 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Ứng dụng Xem Tarot Online
 
-# Getting Started
+Ứng dụng di động cho phép người dùng kết nối và trò chuyện 1-1 với chuyên gia Tarot, xem thông điệp hàng ngày và tham gia nhiệm vụ tích điểm.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## Các cập nhật mới nhất
 
-## Step 1: Start Metro
+### (Ngày cập nhật hiện tại) - Hỗ trợ avatarUrl và address
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+- **Cập nhật Backend**: Backend đã được cập nhật để hỗ trợ các trường `avatarUrl` và `address`
+- **Khôi phục chức năng**: Đã thêm lại các trường `avatarUrl` và `address` vào API cập nhật thông tin người dùng
+- **Quy trình đầy đủ**: Nay ứng dụng có thể thực hiện quy trình upload avatar và cập nhật thông tin đầy đủ
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+### (Cập nhật trước) - Cập nhật về xử lý hình ảnh
 
-```sh
-# Using npm
-npm start
+- **Tự động chuyển đổi sang PNG**: Tất cả ảnh đại diện được upload sẽ tự động được chuyển đổi sang định dạng PNG
+- **Cải thiện xử lý kết nối**: Tự động chuyển đổi URL localhost thành IP máy chủ thực tế
+- **Tăng cường độ tin cậy**: Thêm cơ chế dự phòng để lưu ảnh cục bộ khi upload thất bại
+- **Sửa lỗi kỹ thuật**: Đã thêm kiểu trả về Promise\<any\> cho phương thức fetchWithToken
 
-# OR using Yarn
-yarn start
+**Chi tiết kỹ thuật**:
+1. Sửa đổi phương thức `uploadAvatar` trong `apiService.ts` để tự động đổi tên file và loại ảnh thành PNG
+2. Cập nhật `handleImageSelected` trong `SettingsScreen.tsx` để thử upload trước, nếu thất bại sẽ chuyển sang lưu cục bộ
+3. Tự động chuyển đổi URL từ "http://localhost:3000" thành "http://[IP_thực_tế]:3000"
+
+### (Cập nhật trước) - Cập nhật về chức năng avatar
+
+- **Vấn đề kết nối API**: Đã phát hiện vấn đề khi gọi API upload avatar, nhận lỗi "Network request failed"
+- **Vấn đề trường API**: API không chấp nhận các trường `avatar`, `avatarUrl`, và `address`
+- **Giải pháp tạm thời**: Lưu avatar cục bộ trong state và AsyncStorage để hiển thị trong ứng dụng
+- **Lưu ý**: Avatar sẽ mất khi đóng ứng dụng do được lưu cục bộ
+
+**Chi tiết kỹ thuật**:
+1. Loại bỏ trường `avatarUrl` và `address` khỏi request API `/users/profile`
+2. Bỏ qua việc upload avatar lên server do lỗi kết nối
+3. Lưu URI ảnh cục bộ vào state và AsyncStorage để hiển thị tạm thời
+
+## Cấu trúc thư mục dự án
+
+```
+tarot/
+├── android/                  # Cấu hình cho Android
+├── ios/                      # Cấu hình cho iOS
+├── src/
+│   ├── assets/               # Hình ảnh, fonts và các tài nguyên khác
+│   ├── components/           # Components tái sử dụng
+│   ├── navigation/           # Cấu hình điều hướng
+│   ├── screens/              # Các màn hình của ứng dụng
+│   │   ├── Auth/             # Màn hình liên quan đến xác thực
+│   │   │   ├── LoginScreen.tsx
+│   │   │   └── RegisterScreen.tsx
+│   │   ├── Home/             # Màn hình chính
+│   │   │   └── HomeScreen.tsx
+│   │   ├── Settings/         # Màn hình cài đặt
+│   │   │   └── SettingsScreen.tsx
+│   │   └── Experts/          # Màn hình danh sách chuyên gia
+│   │       └── ExpertsListScreen.tsx
+│   └── utils/                # Các tiện ích và hàm helper
+│       ├── authStorage.ts    # Quản lý lưu trữ token và thông tin người dùng
+│       ├── apiService.ts     # Service gọi API và xử lý refresh token
+│       └── nameGenerator.ts  # Công cụ tạo tên ngẫu nhiên
+├── App.tsx                   # Điểm vào của ứng dụng
+├── package.json              # Quản lý dependencies
+└── README.md                 # Tài liệu dự án
 ```
 
-## Step 2: Build and run your app
+## Các API endpoints
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+### Authentication
 
-### Android
+- **Đăng ký**: `POST /auth/signup`
+  - Body: `{ fullName, phoneNumber, password, authProvider }`
+  - Response: `{ accessToken, refreshToken, user }`
 
-```sh
-# Using npm
-npm run android
+- **Đăng nhập**: `POST /auth/login`
+  - Body: `{ phoneNumber, password }`
+  - Response: `{ accessToken, refreshToken, user }`
 
-# OR using Yarn
+- **Refresh Token**: `POST /auth/refresh-token`
+  - Body: `{ refreshToken }`
+  - Response: `{ accessToken }`
+
+### User
+
+- **Lấy thông tin người dùng**: `GET /users/{id}`
+  - Headers: `Authorization: Bearer {accessToken}`
+  - Response: Chi tiết thông tin người dùng
+
+- **Cập nhật thông tin người dùng**: `PATCH /users/profile`
+  - Headers: `Authorization: Bearer {accessToken}`
+  - Body: `{ fullName, email, gender, dateOfBirth, avatarUrl, address }`
+  - Response: Thông tin người dùng đã cập nhật
+  - Lưu ý: Backend đã được cập nhật để hỗ trợ các trường `avatarUrl` và `address`
+
+### Upload
+
+- **Upload avatar**: `POST /upload/avatar`
+  - Headers: `Authorization: Bearer {accessToken}`
+  - Body: Form-data với trường `file` chứa file hình ảnh (sẽ tự động được chuyển thành PNG)
+  - Response: `{ url: string }` - URL của ảnh đã upload
+  - Lưu ý: 
+    - Bất kể định dạng gốc của ảnh là gì, ứng dụng sẽ tự động đổi tên file và gửi dưới dạng PNG
+    - API trả về URL dạng "localhost" sẽ được tự động chuyển đổi thành địa chỉ IP thực của server
+
+## Quy trình upload avatar
+
+Quy trình upload avatar đầy đủ gồm 2 bước:
+
+1. **Upload ảnh** bằng API `/upload/avatar` và nhận về URL của ảnh
+    - Lưu ý: URL trả về có thể chứa "localhost" sẽ được tự động chuyển đổi thành IP thực tế của server
+2. **Cập nhật thông tin người dùng** bằng API `/users/profile` với trường `avatarUrl` chứa URL đã nhận
+
+Ứng dụng hiện tại sẽ tự động thực hiện quy trình trên nếu API hoạt động, hoặc chuyển sang lưu ảnh cục bộ nếu gặp lỗi kết nối.
+
+## Các tính năng đã phát triển
+
+1. **Xác thực người dùng**
+   - Đăng ký tài khoản với số điện thoại và mật khẩu
+   - Lưu trữ token xác thực và thông tin người dùng
+   - Refresh token tự động khi hết hạn
+
+2. **Quản lý thông tin người dùng**
+   - Hiển thị thông tin người dùng từ API
+   - Hiển thị số xu trên header
+   - Cập nhật ảnh đại diện (lưu cục bộ)
+   - Thay đổi thông tin cá nhân (họ tên, email, giới tính, ngày sinh)
+
+3. **Màn hình chính**
+   - Hiển thị thông tin người dùng và số dư xu
+   - Các dịch vụ xem bói Tarot
+
+4. **Cài đặt tài khoản**
+   - Hiển thị và cập nhật thông tin cá nhân
+   - Đổi ảnh đại diện với tùy chọn chụp ảnh hoặc chọn từ thư viện
+
+## Cài đặt và chạy project
+
+1. Cài đặt dependencies:
+
+```bash
+yarn install
+```
+
+2. Chạy ứng dụng trên Android:
+
+```bash
 yarn android
 ```
 
-### iOS
+3. Chạy ứng dụng trên iOS:
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
-npm run ios
-
-# OR using Yarn
+```bash
 yarn ios
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+## Lưu ý quan trọng
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
-
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+- Đảm bảo thay đổi API_BASE_URL trong `apiService.ts` thành địa chỉ IP của máy tính để thiết bị di động kết nối được với API
+- Tokens được lưu trữ trong AsyncStorage và được tự động refresh khi hết hạn
+- Backend đã được cập nhật để hỗ trợ các trường `avatarUrl` và `address`, cho phép lưu trữ avatar và địa chỉ người dùng

@@ -27,12 +27,11 @@ async function bootstrap() {
   
   // Thêm Helmet để bảo vệ các HTTP headers
   app.use(helmet());
-  
-  // Enable validation pipes globally
+    // Enable validation pipes globally
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     transform: true,
-    forbidNonWhitelisted: true,
+    forbidNonWhitelisted: false, // Tắt kiểm tra nghiêm ngặt các trường không được khai báo
   }));
 
   // Cấu hình CORS chi tiết

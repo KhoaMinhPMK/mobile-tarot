@@ -39,8 +39,7 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsEnum(Gender, { message: 'Giới tính phải là male, female hoặc other' })
   gender?: Gender;
-  
-  @ApiProperty({
+    @ApiProperty({
     description: 'Avatar URL of the user',
     example: 'https://example.com/avatar.jpg',
     required: false
@@ -48,6 +47,15 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsString()
   avatar?: string;
+
+  @ApiProperty({
+    description: 'Alternative Avatar URL field (alias for avatar)',
+    example: 'https://example.com/avatar.jpg',
+    required: false
+  })
+  @IsOptional()
+  @IsString()
+  avatarUrl?: string;
 
   @ApiProperty({
     description: 'Address of the user',

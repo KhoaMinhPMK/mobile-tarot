@@ -11,6 +11,8 @@ import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { join } from 'path';
 import { NotificationModule } from './notification/notification.module';
+import { UploadModule } from './upload/upload.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
 
 @Module({
   imports: [
@@ -67,12 +69,17 @@ import { NotificationModule } from './notification/notification.module';
     ThrottlerModule.forRoot([{
       ttl: 60,
       limit: 10,
-    }]),
+    }]),    // Cấu hình để phục vụ tệp tĩnh
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'uploads'),
+      serveRoot: '/uploads',
+    }),
 
     // Module người dùng và module xác thực
     UserModule,
     AuthModule,
     NotificationModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [

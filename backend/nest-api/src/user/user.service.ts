@@ -11,6 +11,7 @@ import { CoinTransaction, TransactionType } from './entities/coin-transaction.en
 import * as bcrypt from 'bcrypt';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { NotificationService } from '../notification/notification.service';
+import { UpdateUserSimpleDto } from './dto/update-user-simple.dto';
 
 @Injectable()
 export class UserService {
@@ -844,8 +845,7 @@ export class UserService {
       if (updateProfileDto.dateOfBirth !== undefined) {
         updateData.dateOfBirth = new Date(updateProfileDto.dateOfBirth);
       }
-      
-      // Cập nhật mật khẩu nếu có yêu cầu
+        // Cập nhật mật khẩu nếu có yêu cầu
       if (updateProfileDto.oldPassword && updateProfileDto.newPassword) {
         // Kiểm tra mật khẩu cũ
         const isPasswordValid = await bcrypt.compare(updateProfileDto.oldPassword, user.password);
@@ -858,9 +858,16 @@ export class UserService {
         // Hash mật khẩu mới
         updateData.password = await bcrypt.hash(updateProfileDto.newPassword, 10);
       }
+
+      // Xử lý avatar - ưu tiên field avatar, nếu không có thì dùng avatarUrl
+      if (updateProfileDto.avatar !== undefined) {
+        updateData.avatar = updateProfileDto.avatar;
+      } else if (updateProfileDto.avatarUrl !== undefined) {
+        updateData.avatar = updateProfileDto.avatarUrl;
+      }
       
-      // Thêm avatar nếu được gửi
-      if (updateProfileDto.avatar !== undefined) updateData.avatar = updateProfileDto.avatar;
+      // Thêm địa chỉ nếu được gửi
+      if (updateProfileDto.address !== undefined) updateData.address = updateProfileDto.address;
       
       // Thực hiện cập nhật thông tin
       await this.userRepository.update(id, updateData);
@@ -885,5 +892,49 @@ export class UserService {
       }
       throw error;
     }
+  }
+
+  /**
+   * Cập nhật thông tin cơ bản của người dùng
+   * @param userId ID của người dùng
+   * @param updateUserSimpleDto Dữ liệu cập nhật đơn giản
+   * @returns Thông tin người dùng đã cập nhật
+   */
+  async updateUserSimple(userId: number, updateUserSimpleDto: UpdateUserSimpleDto) {
+    const user = await this.findOne(userId);
+    
+    if (!user) {
+      throw new NotFoundException(`Không tìm thấy người dùng với ID ${userId}`);
+    }
+    
+    // Log dữ liệu nhận được để debug
+    console.log(`Cập nhật thông tin đơn giản cho người dùng ${userId}:`, updateUserSimpleDto);
+    
+    // Cập nhật thông tin
+    if (updateUserSimpleDto.email && updateUserSimpleDto.email !== user.email) {
+      // Kiểm tra email đã tồn tại chưa nếu có thay đổi
+      const existingUserWithEmail = await this.userRepository.findOne({ 
+        where: { email: updateUserSimpleDto.email }
+      });
+      
+      if (existingUserWithEmail && existingUserWithEmail.id !== userId) {
+        throw new ConflictException('Email đã được sử dụng bởi tài khoản khác');
+      }
+      
+      // Kiểm tra người dùng phải có số điện thoại mới được cập nhật email
+      if (!user.phoneNumber) {
+        throw new BadRequestException('Bạn cần xác thực số điện thoại trước khi cập nhật email');
+      }
+    }
+    
+    // Áp dụng các thay đổi
+    Object.assign(user, updateUserSimpleDto);
+    
+    // Lưu vào database
+    await this.userRepository.save(user);
+    
+    // Trả về thông tin người dùng đã cập nhật (không bao gồm mật khẩu)
+    const { password, ...result } = user;
+    return result;
   }
 }

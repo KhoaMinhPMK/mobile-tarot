@@ -1,0 +1,97 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Tên app: App Xem Tarot Online
+
+Mục tiêu:
+Ứng dụng cho phép người dùng dễ dàng kết nối và trò chuyện 1-1 với chuyên gia Tarot thông qua chat (text, hình ảnh, voice, gọi thường, video call). Kèm các chức năng thanh toán, bảo mật lịch sử chat, nhận thông điệp hàng ngày, và làm nhiệm vụ tích điểm.
+
+1. Chức năng chính:
+Đăng ký/Đăng nhập:
+
+Đăng nhập bằng số điện thoại, Google, Facebook hoặc Apple ID.
+
+
+Chat 1-1 với chuyên gia Tarot:
+
+Gửi/nhận text, hình ảnh, voice message (dạng ghi âm gửi file .mp3 hoặc streaming tùy kiến trúc),
+
+Gọi điện thường (voice call) và gọi video (video call).
+
+Hệ thống phải hỗ trợ nhiều chuyên gia online, và mỗi cuộc chat sẽ gắn với một chuyên gia cụ thể.
+
+Thanh toán mua gói xem Tarot:
+
+Các gói trả phí
+
+Thanh toán qua Apple Pay, Google Pay, thẻ Visa/Master, MoMo, ZaloPay,...
+
+Sau khi mua, user được cộng số lượt hoặc số phút tương ứng để dùng chat/call.
+
+Bảo mật lịch sử chat:
+
+Cho phép user đặt mật khẩu (4 số hoặc vân tay/FaceID) để mở khóa lịch sử chat.
+
+Lưu trữ lịch sử chat nội bộ app (ưu tiên lưu server-side để đảm bảo backup và đồng bộ đa thiết bị).
+
+2. Chức năng phụ:
+Thông điệp Tarot mỗi ngày:
+
+Mỗi ngày app tự động gửi 1 lá bài Tarot kèm ý nghĩa/ngắn gọn cho người dùng.
+
+Nhiệm vụ tích điểm:
+
+Một số nhiệm vụ đơn giản như:
+
+Đăng nhập mỗi ngày
+
+Hoàn thành phiên chat đầu tiên
+
+Mời bạn bè tham gia app
+
+Người dùng sẽ tích lũy điểm và dùng điểm đổi lượt xem Tarot miễn phí hoặc giảm giá mua gói.
+
+3. Yêu cầu kỹ thuật:
+Frontend:
+
+React Native (iOS và Android).
+
+Giao diện hiện đại, thân thiện, dễ dùng.
+
+Backend:
+
+Node.js/NestJS/ExpressJS hoặc tùy chọn phù hợp (yêu cầu realtime cho chat).
+
+Websocket hoặc Firebase Realtime Database cho realtime chat/call.
+
+Server lưu trữ lịch sử chat, đơn hàng thanh toán, user profile, hệ thống tích điểm.
+
+Hệ thống quản lý chuyên gia Tarot (dashboard web hoặc mobile riêng).
+
+Các dịch vụ bên thứ 3:
+
+Twilio hoặc Agora cho voice/video call.
+
+Firebase hoặc AWS S3 cho lưu trữ media (image/voice).
+
+Payment gateway tích hợp: Stripe, PayOS, ZaloPay.
+
+Bảo mật:
+
+End-to-End Encryption (E2EE) cho tin nhắn riêng tư (khuyến nghị).
+
+Token-based Authentication (JWT).
+
+4. Phần Admin (có thể tách giai đoạn sau):
+Admin quản lý:
+
+Quản lý chuyên gia Tarot.
+
+Duyệt bài thông điệp mỗi ngày.
+
+Quản lý nhiệm vụ, điểm thưởng, đổi thưởng.
+
+
+Quản lý gói dịch vụ.

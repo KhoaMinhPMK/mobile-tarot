@@ -1,0 +1,15 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+tôi sử dụng máy tính window vì vậy vậy khi viết các lệnh cmd phải dụng lệnh cho window
+các lệnh bạn viết sẽ được chạy trên cmd không phải powersell vì vậy phải chú ý cú pháp cho đúng
+tôi sử dụng yarn, nếu như không phải yêu cầu bắt buộc thì không dùng npm nhé. 
+mỗi khi tôi yêu cầu lệnh, bạn hãy đề xuất các phương án để tối ưu nó, nếu tôi đồng ý thì sẽ triển khai.
+lưu ý phải note các điểm quan trong lại vào [README.md](mdc:README.md)
+khi code phải commnent và chú thích đầy đủ các hàm, chức năng. Đặc biệt lưu ý phải viết log chi tiết để kiểm tra lỗi. 
+Các key quan trọng hoặc cái gì đó quan trọng thì phải viết vào file môi trường .env
+Khi code mỗi một trang mới trong app phải tự động chia ra một folder riêng cho trang đó, bố cục thư mục phải đồng nhất.
+
+nên viết bố cục thư mục dự án vào [README.md](mdc:README.md) để sau này tiện theo dõi.

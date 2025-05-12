@@ -26,6 +26,7 @@ import { UserStatsDto } from './dto/user-stats.dto';
 import { AdjustCoinDto } from './dto/adjust-coin.dto';
 import { CoinTransaction } from './entities/coin-transaction.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { UpdateUserSimpleDto } from './dto/update-user-simple.dto';
 
 @ApiTags('users')
 @Controller('users')
@@ -135,44 +136,6 @@ export class UserController {
   })
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.userService.findOne(id);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Patch(':id')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Cập nhật thông tin người dùng' })
-  @ApiParam({ name: 'id', type: 'number', description: 'ID người dùng' })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
-    description: 'Người dùng đã được cập nhật thành công.',
-    type: User
-  })
-  @ApiResponse({ 
-    status: HttpStatus.NOT_FOUND, 
-    description: 'Không tìm thấy người dùng.' 
-  })
-  @ApiResponse({ 
-    status: HttpStatus.CONFLICT, 
-    description: 'Email hoặc số điện thoại đã tồn tại.' 
-  })
-  @ApiResponse({ 
-    status: HttpStatus.BAD_REQUEST, 
-    description: 'Dữ liệu không hợp lệ.' 
-  })
-  @ApiResponse({ 
-    status: HttpStatus.UNAUTHORIZED, 
-    description: 'Không được phép truy cập.' 
-  })
-  update(
-    @Param('id', ParseIntPipe) id: number, 
-    @Body() updateUserDto: UpdateUserDto,
-    @Request() req
-  ) {
-    // Chỉ cho phép người dùng cập nhật thông tin cá nhân của chính họ
-    if (req.user.id !== id) {
-      throw new HttpException('Bạn không có quyền cập nhật thông tin của người dùng khác', HttpStatus.FORBIDDEN);
-    }
-    return this.userService.update(id, updateUserDto);
   }
 
   @UseGuards(JwtAuthGuard)

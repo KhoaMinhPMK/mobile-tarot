@@ -10,6 +10,7 @@ import {
 import { ApiOperation, ApiProperty, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { CreateUserDto } from '../user/dto/create-user.dto';
 
@@ -105,7 +106,6 @@ export class AuthController {
   async logout(@Request() req) {
     return this.authService.logout(req.user.id);
   }
-
   @Post('refresh-token')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Làm mới access token bằng refresh token' })
@@ -118,7 +118,7 @@ export class AuthController {
     status: HttpStatus.UNAUTHORIZED, 
     description: 'Refresh token không hợp lệ hoặc đã hết hạn' 
   })
-  async refreshToken(@Body() body: { refreshToken: string }) {
-    return this.authService.refreshToken(body.refreshToken);
+  async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
+    return this.authService.refreshToken(refreshTokenDto.refreshToken);
   }
 }

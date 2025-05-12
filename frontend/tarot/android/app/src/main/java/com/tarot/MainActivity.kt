@@ -1,4 +1,4 @@
-package com.tarot
+package com.tarot.atung
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
